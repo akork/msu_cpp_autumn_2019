@@ -12,20 +12,20 @@ class Calc
     vector<string> tokens;
     vector<string>::iterator token;
 
-public:
-    Calc(string str)
+  public:
+    Calc(string &str)
     {
         parse_string(str);
         token = tokens.begin();
     }
 
-	int eval() {
-		return binary_low();
-	}
-	
+    int eval()
+    {
+        return binary_low();
+    }
 
-private:
-    void parse_string(string str)
+  private:
+    void parse_string(string &str)
     {
         tokens.push_back("phony");
         auto it = str.begin();
@@ -49,7 +49,7 @@ private:
         }
     }
 
-    int to_number(string token)
+    int to_number(string &token)
     {
         char *p;
         long res = strtol(token.c_str(), &p, 10);
@@ -66,10 +66,10 @@ private:
         if (t == tokens.end())
             throw runtime_error(to_string(__LINE__));
         if (!t->compare("-")) {
-            token++;;
+            token++;
             return -unary();
         } else {
-            token++;;
+            token++;
             return to_number(*t);
         }
     }
@@ -82,10 +82,10 @@ private:
             if ((t = next(token)) == tokens.end()) {
                 return res;
             } else if (!t->compare("*")) {
-                token++;;
+                token++;
                 res *= unary();
             } else if (!t->compare("/")) {
-                token++;;
+                token++;
                 auto u = unary();
                 if (u == 0)
                     throw runtime_error(to_string(__LINE__));
@@ -107,10 +107,10 @@ private:
             } else if (t->compare("+") && t->compare("-")) {
                 throw runtime_error(to_string(__LINE__));
             } else if (!t->compare("+")) {
-                token++;;
+                token++;
                 res += binary_high();
             } else if (!t->compare("-")) {
-                token++;;
+                token++;
                 res -= binary_high();
             }
         }
@@ -125,16 +125,9 @@ int main(int argc, char **argv)
         }
 
         string input(reinterpret_cast<char *>(argv[1]));
-
-        // istringstream iss(input);
-        // vector<string> tokens;
-        // tokens.push_back("phony");
-        // copy(istream_iterator<string>(iss), istream_iterator<string>(),
-        // back_inserter(tokens));
-
         Calc p(input);
-		cout << p.eval();
-		
+        cout << p.eval();
+
     } catch (exception &e) {
         // cout << e.what();
         cout << "error";
