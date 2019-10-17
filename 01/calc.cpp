@@ -13,7 +13,7 @@ class Calc
     vector<string>::iterator token;
 
   public:
-    Calc(string &str)
+    Calc(const string &str)
     {
         parse_string(str);
         token = tokens.begin();
@@ -25,7 +25,7 @@ class Calc
     }
 
   private:
-    void parse_string(string &str)
+    void parse_string(const string &str)
     {
         tokens.push_back("phony");
         auto it = str.begin();
@@ -49,7 +49,7 @@ class Calc
         }
     }
 
-    int to_number(string &token)
+    int to_number(const string &token)
     {
         char *p;
         long res = strtol(token.c_str(), &p, 10);
