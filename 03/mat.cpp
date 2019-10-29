@@ -1,34 +1,27 @@
 #include "mat.h"
-#include <iostream>
-
-Matrix::Vector::Vector(const Matrix &mat) : mat(mat)
-{
-}
-
-void Matrix::Vector::set_row(size_t row)
-{
-    this->row = row;
-}
+#include <stdexcept>
 
 int &Matrix::Vector::operator[](size_t col) const
 {
-    if (col >= mat.cols)
+    if (col >= mat->cols)
         throw std::out_of_range("column out of range");
-    return mat.buf[row * mat.cols + col];
+    return mat->buf[row * mat->cols + col];
 }
 
-Matrix::Matrix(size_t rows, size_t cols)
-    : rows(rows), cols(cols), v(Vector(*this))
+Matrix::Vector::Vector(const Matrix *mat, size_t row) : mat(mat), row(row)
 {
-    buf = static_cast<int *>(operator new(rows *cols));
 }
 
-Matrix::Vector &Matrix::operator[](size_t row) const
+Matrix::Matrix(size_t rows, size_t cols) : rows(rows), cols(cols)
+{
+    buf = new int[rows * cols];
+}
+
+const Matrix::Vector Matrix::operator[](size_t row) const
 {
     if (row >= rows)
         throw std::out_of_range("row out of range");
-    v.set_row(row);
-    return v;
+    return Vector(this, row);
 }
 
 Matrix &Matrix::operator*=(int value)
@@ -43,6 +36,9 @@ bool Matrix::operator==(const Matrix &other) const
 {
     if (this == &other)
         return true;
+
+    if (rows != other.rows || cols != other.cols)
+        return false;
 
     for (int i = 0; i < rows * cols; ++i) {
         if (buf[i] != other.buf[i])
@@ -63,6 +59,7 @@ int Matrix::getColumns()
 
 Matrix::~Matrix()
 {
+    delete[] buf;
 }
 
 bool Matrix::operator!=(const Matrix &other) const
