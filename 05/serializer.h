@@ -1,4 +1,5 @@
 #pragma once
+#include <regex>
 
 enum class Error { NoError, CorruptedArchive };
 
@@ -20,19 +21,26 @@ class Serializer
     std::ostream &out_;
     Error process() { return Error::NoError; }
 
-    template <class... Args> Error process(bool val, Args... args)
+    Error process(bool val)
     {
         if (val) {
             out_ << "true" << Separator;
         } else {
             out_ << "false" << Separator;
         }
-        return process(args...);
+        return Error::NoError;
     }
 
-    template <class... Args> Error process(uint64_t val, Args... args)
+    Error process(uint64_t val)
     {
         out_ << val << Separator;
+        return Error::NoError;
+    }
+
+    template <class First, class... Args> Error process(First val, Args... args)
+    {
+        if (process(val) == Error::CorruptedArchive)
+            return Error::CorruptedArchive;
         return process(args...);
     }
 };
@@ -54,7 +62,16 @@ class Deserializer
   private:
     std::istream &in_;
     Error process() { return Error::NoError; }
-    template <class... Args> Error process(bool &val, Args &... args)
+
+    template <class First, class... argsT>
+    Error process(First &val, argsT &... args)
+    {
+        if (process(val) == Error::CorruptedArchive)
+            return Error::CorruptedArchive;
+        return process(args...);
+    }
+
+    Error process(bool &val)
     {
         std::string text;
         in_ >> text;
@@ -65,24 +82,20 @@ class Deserializer
             val = false;
         else
             return Error::CorruptedArchive;
-        return process(args...);
+        return Error::NoError;
     }
 
-    template <class... Args> Error process(uint64_t &val, Args &... args)
+    Error process(uint64_t &val)
     {
         std::string text;
         in_ >> text;
         try {
-            if (text.find(".") != std::string::npos)
-                return Error::CorruptedArchive;
-            size_t idx;
-            double temp = stod(text, &idx);
-            if (temp < 0 || idx != text.size())
+            if (!regex_match(text, std::regex("[0-9]+")))
                 return Error::CorruptedArchive;
             val = stoul(text);
         } catch (std::exception &e) {
             return Error::CorruptedArchive;
         }
-        return process(args...);
+        return Error::NoError;
     }
 };
