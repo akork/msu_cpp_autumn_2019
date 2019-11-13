@@ -1,5 +1,4 @@
 #pragma once
-#include <regex>
 
 enum class Error { NoError, CorruptedArchive };
 
@@ -81,6 +80,7 @@ class Deserializer
         else if (text == "false")
             val = false;
         else
+			
             return Error::CorruptedArchive;
         return Error::NoError;
     }
@@ -90,7 +90,7 @@ class Deserializer
         std::string text;
         in_ >> text;
         try {
-            if (!regex_match(text, std::regex("[0-9]+")))
+            if (text.find_first_not_of("0123456789") != std::string::npos)
                 return Error::CorruptedArchive;
             val = stoul(text);
         } catch (std::exception &e) {
