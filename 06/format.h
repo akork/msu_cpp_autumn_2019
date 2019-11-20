@@ -3,62 +3,64 @@
 #include <string>
 #include <vector>
 
-std::string &format(std::string &fmt, std::vector<std::string> &strs)
+std::string &format(std::string &fmt, const std::vector<std::string> &strs)
 {
     int state = 0;
-    std::vector<int> start;
-    std::vector<int> end;
-    std::vector<int> inds;
+    int start = 0;
+    int end = -1;
+    int ind = 0;
+    std::stringstream stream;
     int i = 0;
     for (auto ch : fmt) {
         if (state == 0) {
             if (ch == '{') {
                 state = 1;
-                start.push_back(i);
+                start = i;
+                stream << fmt.substr(end + 1, start - (end + 1));
             }
             if (ch == '}') {
                 throw std::runtime_error("unmatched }");
             }
         } else if (state == 1) {
             if (ch == '}') {
-                end.push_back(i);
-                inds.push_back(stoi(fmt.substr(start.back() + 1, end.back())));
+                end = i;
+                ind = stoi(fmt.substr(start + 1, end - (start + 1)));
+                if (ind >= strs.size())
+                    throw std::runtime_error("missing argument");
+                stream << strs[ind];
+
                 state = 0;
             } else if (48 > (int)ch || (int)ch > 57) {
-                throw std::runtime_error("elligable symbol");
+                throw std::runtime_error("illigable symbol");
             }
         }
         i++;
     }
+
     if (state == 1)
         throw std::runtime_error("unmatched {");
-    int offset = 0;
-    for (int i = 0; i < inds.size(); ++i) {
-        if (inds[i] >= strs.size())
-            throw std::runtime_error("missing argument");
-        fmt.replace(start[i] + offset, end[i] - start[i] + 1, strs[inds[i]]);
-        offset -= end[i] - start[i] + 1 - strs[inds[i]].size();
-    }
-    if (state == 1)
-        throw std::runtime_error("unmatched parenthesis");
+    if (end != fmt.size() - 1)
+        stream << fmt.substr(end + 1, fmt.size() - (end + 1));
 
+    fmt = stream.str();
     return fmt;
 }
 
-template <class T, class... Agrs>
-std::string &format(std::string &fmt, std::vector<std::string> &strs, T &&first,
-                    Agrs &&... args)
+void unravel(std::vector<std::string> &strs) {}
+
+template <class T, class... Args>
+void unravel(std::vector<std::string> &strs, T &&first, Args &&... args)
 {
     std::stringstream stream;
     stream << first;
     strs.push_back(stream.str());
-    return format(fmt, strs, std::forward<Agrs>(args)...);
+    unravel(strs, std::forward<Args>(args)...);
 }
 
-template <class... Agrs>
-std::string format(const char *str, Agrs &&... args)
+template <class... Args> std::string format(const char *str, Args &&... args)
 {
     std::string fmt(str);
     std::vector<std::string> strs;
-    return format(fmt, strs, std::forward<Agrs>(args)...);
+    unravel(strs, std::forward<Args>(args)...);
+    return format(fmt, strs);
 }
